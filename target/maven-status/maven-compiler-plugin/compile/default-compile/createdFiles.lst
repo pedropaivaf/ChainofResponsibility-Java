@@ -1,0 +1,12 @@
+com/example/handler/ConflictHandler.class
+com/example/model/Meeting.class
+com/example/model/User.class
+com/example/handler/SchedulingHandler.class
+com/example/handler/WorkingHoursHandler.class
+com/example/model/Room.class
+com/example/model/MeetingRequest.class
+com/example/handler/RoomAvailabilityHandler.class
+com/example/handler/MeetingHandler.class
+com/example/handler/MaxParticipantsHandler.class
+com/example/Main.class
+com/example/calendar/MeetingCalendar.class

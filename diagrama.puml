@@ -1,0 +1,202 @@
+@startuml Chain of Responsibility - Agendamento de Reunioes
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #EAF2FB
+    BorderColor #2E86C1
+    ArrowColor #1A5276
+    HeaderBackgroundColor #2E86C1
+    HeaderFontColor #FFFFFF
+}
+skinparam package {
+    BackgroundColor #EBF5FB
+    BorderColor #5DADE2
+    FontStyle bold
+}
+
+title Chain of Responsibility — Sistema de Agendamento de Reunioes\n
+
+' ==================== PACOTE MODEL ====================
+package "model" {
+
+    class User {
+        - name : String
+        - email : String
+        --
+        + User(name, email)
+        + getName() : String
+        + getEmail() : String
+        + toString() : String
+    }
+
+    class Room {
+        - name : String
+        - capacity : int
+        --
+        + Room(name, capacity)
+        + getName() : String
+        + getCapacity() : int
+        + toString() : String
+    }
+
+    class Meeting {
+        - date : LocalDate
+        - startTime : LocalTime
+        - endTime : LocalTime
+        - participants : List<User>
+        - organizer : User
+        - room : Room
+        --
+        + Meeting(date, startTime, endTime,\n  participants, organizer, room)
+        + getDate() : LocalDate
+        + getStartTime() : LocalTime
+        + getEndTime() : LocalTime
+        + getParticipants() : List<User>
+        + getOrganizer() : User
+        + getRoom() : Room
+        + conflictsWith(date, start, end) : boolean
+        + toString() : String
+    }
+
+    class MeetingRequest {
+        - date : LocalDate
+        - startTime : LocalTime
+        - endTime : LocalTime
+        - participants : List<User>
+        - organizer : User
+        - room : Room
+        - approved : boolean
+        - message : String
+        --
+        + MeetingRequest(date, startTime, endTime,\n  participants, organizer, room)
+        + approve(message) : void
+        + reject(reason) : void
+        + isApproved() : boolean
+        + getMessage() : String
+        + getDate() : LocalDate
+        + getStartTime() : LocalTime
+        + getEndTime() : LocalTime
+        + getParticipants() : List<User>
+        + getOrganizer() : User
+        + getRoom() : Room
+        + toString() : String
+    }
+
+    Meeting "1" --> "1" User : organizer
+    Meeting "1" --> "1" Room : room
+    Meeting "1" --> "*" User : participants
+
+    MeetingRequest "1" --> "1" User : organizer
+    MeetingRequest "1" --> "1" Room : room
+    MeetingRequest "1" --> "*" User : participants
+}
+
+' ==================== PACOTE HANDLER ====================
+package "handler" {
+
+    abstract class MeetingHandler {
+        - next : MeetingHandler
+        --
+        + setNext(handler : MeetingHandler) : MeetingHandler
+        + {abstract} handle(request : MeetingRequest) : boolean
+        # handleNext(request : MeetingRequest) : boolean
+    }
+
+    class WorkingHoursHandler {
+        - HORA_INICIO : LocalTime = 08:00
+        - HORA_FIM : LocalTime = 18:00
+        --
+        + handle(request : MeetingRequest) : boolean
+    }
+
+    class MaxParticipantsHandler {
+        --
+        + handle(request : MeetingRequest) : boolean
+    }
+
+    class RoomAvailabilityHandler {
+        - calendar : MeetingCalendar
+        --
+        + RoomAvailabilityHandler(calendar)
+        + handle(request : MeetingRequest) : boolean
+    }
+
+    class ConflictHandler {
+        - calendar : MeetingCalendar
+        --
+        + ConflictHandler(calendar)
+        + handle(request : MeetingRequest) : boolean
+    }
+
+    class SchedulingHandler {
+        - calendar : MeetingCalendar
+        --
+        + SchedulingHandler(calendar)
+        + handle(request : MeetingRequest) : boolean
+    }
+
+    MeetingHandler <|-- WorkingHoursHandler
+    MeetingHandler <|-- MaxParticipantsHandler
+    MeetingHandler <|-- RoomAvailabilityHandler
+    MeetingHandler <|-- ConflictHandler
+    MeetingHandler <|-- SchedulingHandler
+
+    MeetingHandler --> MeetingHandler : next >
+}
+
+' ==================== PACOTE CALENDAR ====================
+package "calendar" {
+
+    class MeetingCalendar {
+        - meetings : List<Meeting>
+        --
+        + addMeeting(meeting : Meeting) : void
+        + getMeetings() : List<Meeting>
+        + getMeetingsByDate(date : LocalDate) : List<Meeting>
+        + isSalaDisponivel(request : MeetingRequest) : boolean
+        + organizadorTemConflito(request : MeetingRequest) : boolean
+        + clear() : void
+        + getTotalMeetings() : int
+    }
+}
+
+' ==================== CLASSE MAIN ====================
+class Main {
+    + {static} main(args : String[]) : void
+    + {static} buildChain(calendario : MeetingCalendar) : MeetingHandler
+}
+
+' ==================== RELACOES ENTRE PACOTES ====================
+RoomAvailabilityHandler --> MeetingCalendar : usa >
+ConflictHandler         --> MeetingCalendar : usa >
+SchedulingHandler       --> MeetingCalendar : usa >
+MeetingCalendar         --> Meeting         : gerencia >
+
+MeetingHandler          --> MeetingRequest  : processa >
+
+Main --> MeetingHandler   : constroi cadeia >
+Main --> MeetingCalendar  : instancia >
+
+' ==================== NOTA DA CADEIA ====================
+note right of MeetingHandler
+  <b>Padrao: Chain of Responsibility</b>
+  ---
+  Ordem da cadeia:
+  1. WorkingHoursHandler
+     (horario comercial 08:00-18:00)
+  2. MaxParticipantsHandler
+     (capacidade da sala)
+  3. RoomAvailabilityHandler
+     (sala disponivel)
+  4. ConflictHandler
+     (agenda do organizador)
+  5. SchedulingHandler
+     (agendamento final)
+  ---
+  Cada handler decide:
+  processar OU passar ao proximo
+end note
+
+@enduml

@@ -1,0 +1,8 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.test.defaultConfig": "junit5",
+    "editor.formatOnSave": true,
+    "plantuml.diagramsRoot": ".",
+    "plantuml.exportFormat": "png",
+    "plantuml.exportOutDir": "diagrama-output"
+}
